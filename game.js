@@ -21,7 +21,7 @@ GameState.prototype.create = function() {
     this.game.sound.volume = 0.05;
 
     // Define constants
-    this.SHOT_DELAY = 500; // milliseconds (10 bullets/3 seconds)
+    this.SHOT_DELAY = 200; // milliseconds (10 bullets/3 seconds)
     this.BULLET_SPEED = 800; // pixels/second
     this.NUMBER_OF_BULLETS = 20;
     this.GRAVITY = 980; // pixels/second/second
@@ -146,8 +146,8 @@ GameState.prototype.shootBullet = function() {
     // Phaser takes care of this for me by setting this flag
     // but you can do it yourself by killing the bullet if
     // its x,y coordinates are outside of the world.
-    bullet.checkWorldBounds = true;
-    bullet.outOfBoundsKill = true;
+    //bullet.checkWorldBounds = true;
+    //bullet.outOfBoundsKill = true;
 
     // Set the bullet position to the gun position.
     bullet.reset(this.gun.x, this.gun.y);
