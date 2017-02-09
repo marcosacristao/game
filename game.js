@@ -18,6 +18,7 @@ GameState.prototype.preload = function() {
 GameState.prototype.create = function() {
     // Set stage background color
     this.game.stage.backgroundColor = 0x4488cc;
+    this.game.sound.volume = 0.05;
 
     // Define constants
     this.SHOT_DELAY = 500; // milliseconds (10 bullets/3 seconds)
@@ -27,7 +28,9 @@ GameState.prototype.create = function() {
 
     //Audio
     shotSound = this.game.add.audio('shot');
+    shotSound.mute = true;
     explosionSound = this.game.add.audio('explosion');
+    explosionSound.volume == 0.01;
 
     //Background
     this.game.add.tileSprite(0,0,6400,6400,'background');
