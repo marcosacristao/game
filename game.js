@@ -11,6 +11,8 @@ GameState.prototype.preload = function() {
     this.game.load.audio('shot', 'audio/shot.wav');
     this.game.load.spritesheet('blast', 'img/explosion.png', 128, 128);
     this.game.load.audio('explosion', 'audio/explosion.wav');
+    this.game.load.image('enemy','img/enemy.png');
+    this.game.load.audio('enemyexplosion', 'audio/enemy.wav');
     //this.game.load.spritesheet('explosion', 'explosion.png', 128, 128);
 };
 
@@ -28,8 +30,8 @@ GameState.prototype.create = function() {
 
     //Audio
     shotSound = this.game.add.audio('shot');
-    shotSound.mute = true;
     explosionSound = this.game.add.audio('explosion');
+    enemySound = this.game.add.audio('enemyexplosion');
     explosionSound.volume == 0.01;
 
     //Background
@@ -40,6 +42,24 @@ GameState.prototype.create = function() {
 
     // Set the pivot point to the center of the gun
     this.gun.anchor.setTo(0.5, 0.5);
+
+    // Enemy
+    this.enemies = this.game.add.group();
+    var enemy1 = this.game.add.sprite(this.game.width-500, this.game.height-100,'enemy');
+    var enemy2 = this.game.add.sprite(this.game.width-300, this.game.height-100,'enemy');
+    this.game.physics.enable(enemy1, Phaser.Physics.ARCADE);
+    this.game.physics.enable(enemy2, Phaser.Physics.ARCADE);
+    enemy1.body.bounce.setTo(1,0.5);
+    enemy1.body.collideWorldBounds=true;
+    enemy1.body.mass=5000;
+    enemy1.body.drag.setTo(100,100);
+    enemy1.body.friction.setTo(5000,100);
+    this.enemies.add(enemy1);
+
+    enemy2.body.collideWorldBounds=true;
+    enemy2.body.bounce.setTo(1,1);
+    enemy2.body.mass=100;
+    this.enemies.add(enemy2);
 
     // Create an object pool of bullets
     this.bulletPool = this.game.add.group();
@@ -64,6 +84,7 @@ GameState.prototype.create = function() {
         // Add the ground blocks, enable physics on each, make them immovable
         var groundBlock = this.game.add.sprite(x, this.game.height - 32, 'ground');
         this.game.physics.enable(groundBlock, Phaser.Physics.ARCADE);
+        groundBlock.body.friction.setTo(1000,1000);
         groundBlock.body.immovable = true;
         groundBlock.body.allowGravity = false;
         this.ground.add(groundBlock);
@@ -89,6 +110,10 @@ GameState.prototype.create = function() {
         20, 20, '', { font: '16px Tahoma', fill: '#ffffff' }
     );
     this.debugText.setShadow(1,1,'rgba(0,0,0,0.5)',1);
+    this.enemyText1 = this.game.add.text(enemy1.x,enemy1.y-36,'', {font: '16px Tahoma', fill: '#00ff24'});
+    this.enemyText1.setShadow(1,1,'rgba(0,0,0,1)',1);
+    this.enemyText2 = this.game.add.text(enemy2.x,enemy2.y-36,'', {font: '16px Tahoma', fill: '#00ff24'});
+    this.enemyText2.setShadow(1,1,'rgba(0,0,0,1)',1);
 };
 
 GameState.prototype.drawTrajectory = function() {
@@ -165,8 +190,20 @@ GameState.prototype.update = function() {
         this.debugText.setText(
           this.game.time.fps + ' FPS\n' +
           'Bullet Shot Speed = ' + this.BULLET_SPEED+'\n'+
-          'Gravity = ' + this.GRAVITY+'\n'+
+          'World Gravity = ' + this.GRAVITY+'\n'+
           'Marco Sacristão 11907 - LEI@IPBEJA'
+          );
+
+        this.enemyText1.x=this.enemies.getAt(0).x;
+        this.enemyText1.y=this.enemies.getAt(0).y-36;
+        this.enemyText1.setText(
+          'Mass:'+this.enemies.getAt(0).body.mass +'\n'
+          );
+
+        this.enemyText2.x=this.enemies.getAt(1).x;
+        this.enemyText2.y=this.enemies.getAt(1).y-36;
+        this.enemyText2.setText(
+          'Mass:'+this.enemies.getAt(1).body.mass +'\n'
           );
     }
 
@@ -176,16 +213,27 @@ GameState.prototype.update = function() {
     // Draw the trajectory every frame
     this.drawTrajectory();
 
+    // Check if bullets have collided with the enemy
+    this.game.physics.arcade.collide(this.bulletPool, this.enemies, function(bullet, enemy){
+      bullet.kill();
+      explosionSound.play();
+      this.getExplosion(bullet.x,bullet.y);
+      enemy.body.velocity.x = Math.cos(bullet.rotation) * this.BULLET_SPEED;
+      enemy.body.velocity.y = Math.sin(bullet.rotation) * this.BULLET_SPEED;
+      enemySound.play();
+    }, null,this);
+
     // Check if bullets have collided with the ground
     this.game.physics.arcade.collide(this.bulletPool, this.ground, function(bullet, ground) {
-       
         // Create an explosion
         this.getExplosion(bullet.x, bullet.y);
-
         // Kill the bullet
         bullet.kill();
         explosionSound.play();
     }, null, this);
+
+    // Check if enemies have collided with the ground
+    this.game.physics.arcade.collide(this.enemies, this.ground);
 
     // Rotate all living bullets to match their trajectory
     this.bulletPool.forEachAlive(function(bullet) {
